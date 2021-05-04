@@ -1,0 +1,1 @@
+docker run -v `pwd`:/home/project -w /home/project -p 3000:3000 -it --rm node npm run start:dev

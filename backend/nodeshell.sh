@@ -1,0 +1,1 @@
+docker run -v `pwd`:/home/project -w /home/project -it --rm node:lts bash
