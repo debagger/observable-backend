@@ -1,0 +1,99 @@
+version: "3.9"
+volumes: 
+  imagesdata:
+  grafanadata:
+  postgresdata:
+  mongodata:
+  tempodata:
+services:
+  backend:
+    image: node:lts
+    volumes:
+      - ./backend:/home/backend
+      - imagesdata:/images
+    working_dir: /home/backend
+    environment: 
+      OT_TRACING_ENABLED: "false"
+      PROM_METRICS_ENABLE: "true"
+    ports:  
+      - 3000:3000
+      - 9229:9229
+    entrypoint: ["/bin/sh"]
+    command: ["prod.sh"]
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+        loki-pipeline-stages: |
+          - json:
+              expressions:
+                output: msg
+                level: level
+                timestamp: time
+                pid: pid
+                hostname: hostname
+                context: context
+                traceID: traceID
+  db:
+    image: postgres
+    restart: always
+    expose: 
+      - "5432"
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: images
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+  mongo:
+    image: mongo
+    restart: always
+    volumes: 
+      - mongodata:/data/db
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes: 
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  mongo-exporter:
+    image: bitnami/mongodb-exporter
+    ports:
+      - 9091:9091
+    command: ["--mongodb.uri=mongodb://mongo", "--web.listen-address=0.0.0.0:9091"]
+  pg-exporter:
+    image: bitnami/postgres-exporter
+    ports:
+      - 9092:9092
+    environment: 
+      DATA_SOURCE_NAME: sslmode=disable user=images password=password host=db
+      PG_EXPORTER_WEB_LISTEN_ADDRESS: 0.0.0.0:9092
+  grafana:
+    image: grafana/grafana
+    ports: 
+      - 3001:3000
+    volumes: 
+      - grafanadata:/var/lib/grafana
+  loki:
+    image: grafana/loki:2.0.0
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+

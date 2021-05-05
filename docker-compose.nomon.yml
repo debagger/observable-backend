@@ -1,0 +1,47 @@
+version: "3.9"
+volumes:
+  imagesdata:
+  grafanadata:
+  postgresdata:
+  mongodata:
+  tempodata:
+services:
+  backend:
+    image: node:lts
+    volumes:
+      - ./backend:/home/backend
+      - imagesdata:/images
+    working_dir: /home/backend
+    environment:
+      OT_TRACING_ENABLED: "false"
+      PROM_METRICS_ENABLE: "false"
+    ports:
+      - 3000:3000
+      - 9229:9229
+    entrypoint: ["/bin/sh"]
+    command: ["prod.sh"]
+  db:
+    image: postgres
+    restart: always
+    expose:
+      - "5432"
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: images
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+  mongo:
+    image: mongo
+    restart: always
+    volumes:
+      - mongodata:/data/db
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
