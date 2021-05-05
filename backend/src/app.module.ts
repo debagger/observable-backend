@@ -16,7 +16,6 @@ import { Request, Response } from 'express';
     LoggerModule.forRoot({
       pinoHttp: {
         reqCustomProps: (req: Request, res: Response) => {
-          
           const traceID = res.getHeader('trace-id');
           console.log(`reqCustomProps traceID = ${traceID}`);
           return { traceID };

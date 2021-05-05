@@ -12,6 +12,9 @@ services:
       - ./backend:/home/backend
       - imagesdata:/images
     working_dir: /home/backend
+    environment: 
+      OT_TRACING_ENABLED: "true"
+      PROM_METRICS_ENABLE: "true"
     ports:  
       - 3000:3000
       - 9229:9229
