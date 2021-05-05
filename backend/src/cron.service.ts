@@ -8,7 +8,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ImageMetadata, ImageMetadataDocument } from './imageMetadata.shema';
 import { Model } from 'mongoose';
 import { join } from 'path';
-import { unlink } from 'fs/promises';
+import { unlink, opendir, stat } from 'fs/promises';
+import {
+  imageDeletedCountCounter,
+  imageTotalFileBytesCountGauge,
+  imageTotalFilesCountGauge,
+} from './prom-metrics';
 
 @Injectable()
 export class CronService {
@@ -20,6 +25,27 @@ export class CronService {
     private readonly logger: PinoLogger,
   ) {
     logger.setContext(CronService.name);
+  }
+  @Cron('0 * * * * *')
+  async collectImageDirCountAndSize() {
+    try {
+      this.logger.info('Collect metrics for /image dir');
+      const dircontent = await opendir('/images');
+      let totalSize = 0;
+      let count = 0;
+      for await (const dirent of dircontent) {
+        if (dirent.isFile() && dirent.name.endsWith('.jpg')) {
+          const _stat = await stat(join('/images', dirent.name));
+          totalSize += _stat.size;
+          count += 1;
+        }
+      }
+      imageTotalFileBytesCountGauge.set(totalSize);
+      imageTotalFilesCountGauge.set(count);
+    } catch (err) {
+      this.logger.error(err, 'Error when collect metrics for /image dir');
+    }
+    this.logger.info('Collect metrics for /image dir finished');
   }
 
   @Cron('45 * * * * *')
@@ -71,6 +97,7 @@ export class CronService {
     try {
       const path = join('/images', data.filename);
       await unlink(path);
+      imageDeletedCountCounter.inc(1);
     } catch (error) {
       this.logger.error(
         error,

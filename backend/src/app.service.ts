@@ -12,6 +12,7 @@ import { writeFile } from 'fs/promises';
 import { InjectModel } from '@nestjs/mongoose';
 import { ImageMetadata, ImageMetadataDocument } from './imageMetadata.shema';
 import { LeanDocument, Model } from 'mongoose';
+import { imageWriteBytesCounter, imageWriteCountCounter } from './prom-metrics';
 
 @Injectable()
 export class AppService {
@@ -77,7 +78,10 @@ export class AppService {
         useGrouping: false,
       }).format(id) + '.jpg';
     const path = join('/images', filename);
+
     await writeFile(path, buf);
+    imageWriteCountCounter.inc(1);
+    imageWriteBytesCounter.inc(buf.byteLength);
 
     uploadedImage.filename = filename;
     await this.uploadedImageRepository.save([uploadedImage]);
