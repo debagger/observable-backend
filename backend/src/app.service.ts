@@ -1,4 +1,4 @@
-import { Catch, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as sharp from 'sharp';
 import * as exifReader from 'exif-reader';
 import * as icc from 'icc';
@@ -89,7 +89,7 @@ export class AppService {
 
   private async saveImageMetadata(buf: Buffer, id: number) {
     try {
-      const clear$ = function (obj: object) {
+      const clear$ = function (obj: any) {
         for (const key in obj) {
           if (Object.prototype.hasOwnProperty.call(obj, key)) {
             const element = obj[key];
@@ -114,7 +114,10 @@ export class AppService {
   }
 
   async getImageInfo(id: number) {
-    const result = {} as {info?:UploadedImage, metadata?:LeanDocument<ImageMetadataDocument>};
+    const result = {} as {
+      info?: UploadedImage;
+      metadata?: LeanDocument<ImageMetadataDocument>;
+    };
     const imginfo = await this.uploadedImageRepository.findOne({ id });
     result.info = imginfo;
     if (imginfo) {

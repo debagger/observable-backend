@@ -6,7 +6,7 @@ import { UploadedImage } from './uploadedImage.entity';
 import { LessThan, Repository } from 'typeorm';
 import { InjectModel } from '@nestjs/mongoose';
 import { ImageMetadata, ImageMetadataDocument } from './imageMetadata.shema';
-import { LeanDocument, Model } from 'mongoose';
+import { Model } from 'mongoose';
 import { join } from 'path';
 import { unlink } from 'fs/promises';
 
@@ -29,30 +29,53 @@ export class CronService {
       where: { lastAccessDate: null, date: LessThan(minutesAgo) },
     });
 
-    this.logger.debug(
+    this.logger.info(
       `Found ${unasccesedImages.length} unaccessed images more then 10 minutes old`,
     );
     for (const item of unasccesedImages) {
       await this.deleteImage(item);
-      this.logger.debug(`Image id = ${item.id} deleted`);
+      this.logger.info(`Image id = ${item.id} deleted`);
     }
     const tenMinlastaccImages = await this.uploadedImageRepository.find({
       where: { lastAccessDate: LessThan(minutesAgo) },
     });
-    this.logger.debug(
+    this.logger.info(
       `Found ${unasccesedImages.length} images with more then 10 minutes last access`,
     );
 
     for (const item of tenMinlastaccImages) {
       await this.deleteImage(item);
-      this.logger.debug(`Image id = ${item.id} deleted`);
+      this.logger.info(`Image id = ${item.id} deleted`);
     }
   }
 
   private async deleteImage(data: UploadedImage) {
-    await this.uploadedImageRepository.delete({ id: data.id });
-    await this.ImageMetadataModel.findOneAndDelete({ id: data.id });
-    const path = join('/images', data.filename);
-    await unlink(path);
+    try {
+      await this.uploadedImageRepository.delete({ id: data.id });
+    } catch (err) {
+      this.logger.error(
+        err,
+        `Error when deleting record id: ${data?.id} from db`,
+      );
+    }
+
+    try {
+      await this.ImageMetadataModel.findOneAndDelete({ id: data.id });
+    } catch (error) {
+      this.logger.error(
+        error,
+        `Error when delete image id: ${data?.id} metadata from db`,
+      );
+    }
+
+    try {
+      const path = join('/images', data.filename);
+      await unlink(path);
+    } catch (error) {
+      this.logger.error(
+        error,
+        `Error when delete image id: ${data?.id} from disk`,
+      );
+    }
   }
 }
