@@ -1,5 +1,6 @@
 version: "3.9"
 volumes: 
+  imagesdata:
   grafanadata:
   postgresdata:
   mongodata:
@@ -9,12 +10,13 @@ services:
     image: node:lts
     volumes:
       - ./backend:/home/backend
-      - /root/images:/images
+      - imagesdata:/images
     working_dir: /home/backend
     ports:  
       - 3000:3000
       - 9229:9229
-    entrypoint: npm run start:prod
+    entrypoint: ["/bin/sh"]
+    command: ["prod.sh"]
     logging:
       driver: loki
       options:
