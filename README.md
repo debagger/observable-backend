@@ -10,7 +10,7 @@ Here is simple Nest.js service, which recieves images, parse and save its metada
 
 Run project without any monitoring:
 ```
-docker-compose -f docker-compose.metrics_logs.yml up -d
+docker-compose -f docker-compose.nomon.yml up -d
 ```
 
 Run project with metrics (Prometheus and Grafana):
