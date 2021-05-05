@@ -47,31 +47,39 @@ export class CronService {
     }
     this.logger.info('Collect metrics for /image dir finished');
   }
-
+  private removeOldImagesRun = false;
   @Cron('45 * * * * *')
-  async handleCron() {
-    const minutesAgo = new Date(Date.now() - 60000 * 10);
-    const unasccesedImages = await this.uploadedImageRepository.find({
-      where: { lastAccessDate: null, date: LessThan(minutesAgo) },
-    });
+  async removeOldImages() {
+    if (this.removeOldImagesRun) return;
+    try {
+      this.removeOldImagesRun = true;
+      const minutesAgo = new Date(Date.now() - 60000 * 10);
+      const unasccesedImages = await this.uploadedImageRepository.find({
+        where: { lastAccessDate: null, date: LessThan(minutesAgo) },
+      });
 
-    this.logger.info(
-      `Found ${unasccesedImages.length} unaccessed images more then 10 minutes old`,
-    );
-    for (const item of unasccesedImages) {
-      await this.deleteImage(item);
-      this.logger.info(`Image id = ${item.id} deleted`);
-    }
-    const tenMinlastaccImages = await this.uploadedImageRepository.find({
-      where: { lastAccessDate: LessThan(minutesAgo) },
-    });
-    this.logger.info(
-      `Found ${unasccesedImages.length} images with more then 10 minutes last access`,
-    );
+      this.logger.info(
+        `Found ${unasccesedImages.length} unaccessed images more then 10 minutes old`,
+      );
+      for (const item of unasccesedImages) {
+        await this.deleteImage(item);
+        this.logger.info(`Image id = ${item.id} deleted`);
+      }
+      const tenMinlastaccImages = await this.uploadedImageRepository.find({
+        where: { lastAccessDate: LessThan(minutesAgo) },
+      });
+      this.logger.info(
+        `Found ${unasccesedImages.length} images with more then 10 minutes last access`,
+      );
 
-    for (const item of tenMinlastaccImages) {
-      await this.deleteImage(item);
-      this.logger.info(`Image id = ${item.id} deleted`);
+      for (const item of tenMinlastaccImages) {
+        await this.deleteImage(item);
+        this.logger.info(`Image id = ${item.id} deleted`);
+      }
+    } catch (err) {
+      this.logger.error(err, 'Unexpected error when remove old images');
+    } finally {
+      this.removeOldImagesRun = false;
     }
   }
 
