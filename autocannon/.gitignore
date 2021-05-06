@@ -2,6 +2,8 @@
 /results/*.json
 /node_modules
 
+#dotenv
+.env
 # Logs
 logs
 *.log
