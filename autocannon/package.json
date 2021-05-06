@@ -1,0 +1,16 @@
+{
+  "name": "autocannon",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mikhail Sokolov",
+  "license": "ISC",
+  "dependencies": {
+    "autocannon": "^7.2.0",
+    "dotenv": "^9.0.0",
+    "form-data": "^4.0.0"
+  }
+}
