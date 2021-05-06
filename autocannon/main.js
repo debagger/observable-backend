@@ -6,7 +6,7 @@ const FormData = require("form-data");
 const { readFileSync, writeFileSync } = require("fs");
 
 const hostname = process.env.TARGETHOST;
-console.log(`Start test host "${hostname}"`)
+console.log(`Target host "${hostname}"`)
 function getForm() {
   const form = new FormData();
   const path = join(process.cwd(), "test.jpg");
@@ -22,7 +22,7 @@ const instance = autocannon(
     url: `http://${hostname}:3000/upload`,
     connections: 70,
     pipelining: 1,
-    duration: 1200,
+    duration: 120,
     timeout: 100,
     requests: [
       {
