@@ -1,10 +1,11 @@
 version: "3.9"
-volumes: 
+volumes:
   imagesdata:
   grafanadata:
   postgresdata:
   mongodata:
   tempodata:
+  jaegerdata:
 services:
   backend:
     image: node:lts
@@ -12,12 +13,12 @@ services:
       - ./backend:/home/backend
       - imagesdata:/images
     working_dir: /home/backend
-    environment: 
+    environment:
       OT_TRACING_ENABLED: "true"
+      OT_TRACING_HOST: "jaeger"
       PROM_METRICS_ENABLE: "true"
-    ports:  
+    ports:
       - 3000:3000
-      - 9229:9229
     entrypoint: ["/bin/sh"]
     command: ["prod.sh"]
     logging:
@@ -37,7 +38,7 @@ services:
   db:
     image: postgres
     restart: always
-    expose: 
+    expose:
       - "5432"
     volumes:
       - postgresdata:/var/lib/postgresql/data
@@ -56,7 +57,7 @@ services:
   mongo:
     image: mongo
     restart: always
-    volumes: 
+    volumes:
       - mongodata:/data/db
     logging:
       driver: loki
@@ -82,67 +83,41 @@ services:
     image: prom/prometheus
     ports:
       - 9090:9090
-    volumes: 
+    volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
   mongo-exporter:
     image: bitnami/mongodb-exporter
     ports:
       - 9091:9091
-    command: ["--mongodb.uri=mongodb://mongo", "--web.listen-address=0.0.0.0:9091"]
+    command:
+      ["--mongodb.uri=mongodb://mongo", "--web.listen-address=0.0.0.0:9091"]
   pg-exporter:
     image: bitnami/postgres-exporter
     ports:
       - 9092:9092
-    environment: 
+    environment:
       DATA_SOURCE_NAME: sslmode=disable user=images password=password host=db
       PG_EXPORTER_WEB_LISTEN_ADDRESS: 0.0.0.0:9092
   grafana:
     image: grafana/grafana
-    ports: 
+    ports:
       - 3001:3000
-    volumes: 
+    volumes:
       - grafanadata:/var/lib/grafana
   loki:
     image: grafana/loki:2.0.0
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
-  tempo:
-    image: grafana/tempo:latest
-    command: ["-config.file=/etc/tempo.yaml"]
+  jaeger:
+    image: jaegertracing/all-in-one
+    environment:
+      SPAN_STORAGE_TYPE: badger
+      BADGER_EPHEMERAL: "false"
+      BADGER_DIRECTORY_VALUE: /badger/data
+      BADGER_DIRECTORY_KEY: /badger/key
     volumes:
-      - ./tempo-local.yaml:/etc/tempo.yaml
-      - tempodata:/tmp/tempo
+      - jaegerdata:/badger
     ports:
-      # - "14268"      # jaeger ingest, Jaeger - Thrift HTTP
-      # - "14250"      # Jaeger - GRPC
-      # - "55680"      # OpenTelemetry
-      # - "3100"       # tempo
-      # - "6831/udp"   # Jaeger - Thrift Compact
-      - "6832/udp"   # Jaeger - Thrift Binary
-
-  # elasticsearch:
-  #   image: elasticsearch:7.12.1
-  #   environment:
-  #     - discovery.type=single-node
-  #     - ES_JAVA_OPTS=-Xms250m -Xmx250m
-  #   ports:
-  #     - 9200:9200
-  #     - 9300:9300
-  # logstash:
-  #   image: logstash:7.12.1
-  #   links:
-  #     - elasticsearch
-  #   environment:
-  #     - ES_JAVA_OPTS=-Xms250m -Xmx250m
-  #   volumes:
-  #     - ./logstash.conf:/etc/logstash/logstash.conf
-  #   command: logstash -f /etc/logstash/logstash.conf
-  #   ports:
-  #     - 12201:12201/udp
-  #   depends_on:
-  #     - elasticsearch
-
-
-
-
+      - "6832/udp"
+      - 16686:16686

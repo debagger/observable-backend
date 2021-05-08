@@ -13,7 +13,7 @@ services:
       - imagesdata:/images
     working_dir: /home/backend
     environment: 
-      OT_TRACING_ENABLED: "false"
+      OT_TRACING_ENABLED: "true"
       PROM_METRICS_ENABLE: "true"
     ports:  
       - 3000:3000
@@ -61,11 +61,22 @@ services:
       driver: loki
       options:
         loki-url: "http://localhost:3100/loki/api/v1/push"
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: root
+    #   MONGO_INITDB_ROOT_PASSWORD: example
+    # logging:
+    #   driver: gelf
+    #   options:
+    #     gelf-address: "udp://localhost:12201"
+    #     tag: "demo2_redis"
   mongo-express:
     image: mongo-express
     restart: always
     ports:
       - 8081:8081
+    # environment:
+    #   ME_CONFIG_MONGODB_ADMINUSERNAME: root
+    #   ME_CONFIG_MONGODB_ADMINPASSWORD: example
   prometheus:
     image: prom/prometheus
     ports:
@@ -95,4 +106,42 @@ services:
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
+  tempo:
+    image: grafana/tempo:latest
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo-local.yaml:/etc/tempo.yaml
+      - tempodata:/tmp/tempo
+    ports:
+      # - "14268"      # jaeger ingest, Jaeger - Thrift HTTP
+      # - "14250"      # Jaeger - GRPC
+      # - "55680"      # OpenTelemetry
+      # - "3100"       # tempo
+      # - "6831/udp"   # Jaeger - Thrift Compact
+      - "6832/udp"   # Jaeger - Thrift Binary
+
+  # elasticsearch:
+  #   image: elasticsearch:7.12.1
+  #   environment:
+  #     - discovery.type=single-node
+  #     - ES_JAVA_OPTS=-Xms250m -Xmx250m
+  #   ports:
+  #     - 9200:9200
+  #     - 9300:9300
+  # logstash:
+  #   image: logstash:7.12.1
+  #   links:
+  #     - elasticsearch
+  #   environment:
+  #     - ES_JAVA_OPTS=-Xms250m -Xmx250m
+  #   volumes:
+  #     - ./logstash.conf:/etc/logstash/logstash.conf
+  #   command: logstash -f /etc/logstash/logstash.conf
+  #   ports:
+  #     - 12201:12201/udp
+  #   depends_on:
+  #     - elasticsearch
+
+
+
 

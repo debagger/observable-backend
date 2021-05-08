@@ -8,10 +8,12 @@ import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
 import { trace } from '@opentelemetry/api';
 
 export const openTelemetryEnabled = process.env.OT_TRACING_ENABLED === 'true';
+export const openTelemetryHost = process.env.OT_TRACING_HOST;
 
 console.log('OT_TRACING_ENABLED =', process.env.OT_TRACING_ENABLED);
+console.log('OT_TRACING_HOST = ', process.env.OT_TRACING_HOST);
 
-if (openTelemetryEnabled) {
+function enableOTInstrumentation() {
   console.log('OpenTelemetry instrmentation setup begins...');
   const provider = new NodeTracerProvider();
   provider.register();
@@ -36,10 +38,24 @@ if (openTelemetryEnabled) {
     ),
   );
   console.log('OpenTelemetry tracing enabled');
-} else {
-  console.log('OpenTelemetry tracing disabled');
 }
 
-export const tracer = openTelemetryEnabled
-  ? trace.getTracer('backend')
-  : undefined;
+if (openTelemetryEnabled) {
+  if (openTelemetryHost) {
+    enableOTInstrumentation();
+  } else {
+    console.log(
+      'To enable OpenTelemetry tracing add OT_TRACING_HOST evironment variable',
+    );
+  }
+} else {
+  console.log(
+    'OpenTelemetry tracing disabled. To enable OpenTelemetry tracing set OT_TRACING_ENABLED to "true"' +
+      ' and add OT_TRACING_HOST evironment variable',
+  );
+}
+
+export const tracer =
+  openTelemetryEnabled && openTelemetryHost
+    ? trace.getTracer('backend')
+    : undefined;
