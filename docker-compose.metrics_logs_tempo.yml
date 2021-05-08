@@ -19,6 +19,7 @@ services:
       - 3000:3000
     entrypoint: ["/bin/sh"]
     command: ["prod.sh"]
+    restart: always
     logging:
       driver: loki
       options:
