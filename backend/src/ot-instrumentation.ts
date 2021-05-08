@@ -31,7 +31,7 @@ function enableOTInstrumentation() {
   provider.addSpanProcessor(
     new BatchSpanProcessor(
       new JaegerExporter({
-        host: 'tempo',
+        host: openTelemetryHost,
         port: 6832,
         serviceName: 'backend',
       }),
