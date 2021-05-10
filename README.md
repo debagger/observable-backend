@@ -1,10 +1,12 @@
 # Observable backend demo project
-Show how to add  
-* Metrics (Prometheus)
+Project for [this](https://habr.com/ru/company/macloud/blog/556518/) post at habr.com 
+
+Shows how to   
+* Collect Metrics (Prometheus)
 * Collect logs
 * Collect traces
 
-to Nest.js project. 
+for Nest.js project. 
 
 Here is simple Nest.js service, which recieves images, parse and save its metadata to database (Mongo and Posges).
 
